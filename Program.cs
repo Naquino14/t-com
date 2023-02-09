@@ -2,7 +2,7 @@
 using System.Transactions;
 
 namespace Program {
-    internal class Program {
+    internal static class Program {
         private enum CnxType {
             port,
             display,
@@ -11,9 +11,10 @@ namespace Program {
 
         internal static void Main(string[] args) {
             // format
-            // Usage: tcom [-tr] <-d | -f | port>
+            // Usage: tcom [-Tr] <-d | -f | port>
             // options:
-            // -t: tunnel             | tunnels port from windows into wsl
+            // -T: tunnel             | tunnels port from windows into wsl
+            // -t timestamp:          | adds timestamp to output
             // -r: regex highlighting | specify a highlighting schema
             // -d: display            | displays COM devices
             // -f: find               | attempts to find the COM device
@@ -21,9 +22,11 @@ namespace Program {
             // setup program destructor
             var curProc = Process.GetCurrentProcess();
             curProc.Exited += OnApplicationExit;
+            Console.CancelKeyPress += OnApplicationExit;
 
             bool tunnel = false,
-                regex = false;
+                regex = false,
+                timestamp = false;
             var cnxType = CnxType.port;
             int COM = -2;
 
@@ -32,10 +35,13 @@ namespace Program {
             var printArgs = () => Console.WriteLine("Usage: tcom [-tr] <-d | -f | port>");
 
             foreach (var arg in args)
-                if (arg[0] != '-')
+                if (arg[0] == '-')
                     switch (arg) {
-                        case "-t":
+                        case "-T":
                             tunnel = true;
+                            break;
+                        case "-t":
+                            timestamp = true;
                             break;
                         case "-r":
                             regex = true;
