@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Transactions;
+using tcom;
 
 namespace Program {
     internal static class Program {
@@ -61,6 +62,15 @@ namespace Program {
             if (args.Length == 0 || (COM == -2 && cnxType == CnxType.port)) {
                 printArgs();
                 OnApplicationExit(null, null!);
+            }
+
+            // setup serial port
+            if (cnxType == CnxType.port) {
+                throw new NotImplementedException();
+            } else if (cnxType == CnxType.display) {
+                SerialHandler.Display();
+            } else if (cnxType == CnxType.find) {
+                throw new NotImplementedException();
             }
 
             Console.WriteLine("Press any key to continue...");
