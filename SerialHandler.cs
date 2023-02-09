@@ -5,6 +5,8 @@ namespace tcom {
         internal static Thread ReadThread { get; private set; }
         internal static SerialPort Port { get; private set; }
 
+        private static int COM { get; set; }
+
         internal static void Display() {
             // display COM devices
             Console.WriteLine("Available serial devices:");
@@ -27,25 +29,23 @@ namespace tcom {
                     break;
             }
 
-            Start(COM);
+            SerialHandler.COM = COM;
+            Start();
         }
 
-        public static void Start(int COM) {
+        public static void Start() {
             try {
-                Port = new($"COM{COM}", 115200, Parity.None, 8, StopBits.One);
+                Port = new($"COM{COM}", 115200, Parity.None, 8, StopBits.One) {
+                    RtsEnable = true,
+                    DtrEnable = true,
+                    Handshake = Handshake.None
+                };
+                Port.DataReceived += new SerialDataReceivedEventHandler(OnRecieveData);
                 Port.Open();
-                Port.ReceivedBytesThreshold = 100;
-
-                ReadThread = new(Read);
-                ReadThread.Start();
             }
             catch (IOException ioex) {
                 Console.WriteLine($"Error opening COM{COM}: {ioex.Message}");
                 Environment.Exit(-1);
-            }
-            catch (ThreadInterruptedException) {
-                Console.WriteLine("Thread interrupted. Killing...");
-                
             } catch (Exception e) {
                 Console.WriteLine($"Unexpected error opening port: {e.Message}");
                 Environment.Exit(-1);
@@ -53,20 +53,15 @@ namespace tcom {
             Console.WriteLine($"Connected to COM{COM}.");
         }
 
-        internal static void Read() { 
-            while (true) {
-                try {
-                    string? line = Port.ReadLine();
-                    Console.WriteLine(line);
-                }
-                catch (OperationCanceledException) {
-                    Console.WriteLine("Device disconnected.");
-                    Environment.Exit(-1);
-                }
-                catch (TimeoutException) {
-                    Console.WriteLine("Readline timed out.");
-                    Environment.Exit(-1);
-                }
+        private static void OnRecieveData(object sender, SerialDataReceivedEventArgs e) {
+            try {
+                SerialPort sp = (SerialPort)sender;
+                string payload = sp.ReadLine();
+                Console.WriteLine(payload);
+            }
+            catch (Exception ex) {
+                Console.WriteLine($"Unexpected error reading data: {ex.Message}");
+                Environment.Exit(-1);
             }
         }
     }

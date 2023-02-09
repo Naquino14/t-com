@@ -79,6 +79,12 @@ namespace Program {
         }
 
         internal static void OnApplicationExit(object? u, EventArgs e) {
+            Console.WriteLine("Exiting...");
+            if (SerialHandler.Port is not null && SerialHandler.Port.IsOpen) {
+                SerialHandler.Port.Close();
+                SerialHandler.Port.Dispose();
+            }
+
             Environment.Exit(0);
         }
     }
